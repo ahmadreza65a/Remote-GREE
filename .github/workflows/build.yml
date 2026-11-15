@@ -1,4 +1,4 @@
-name: Build APK
+name: Build App
 on:
   push:
   workflow_dispatch:
@@ -14,10 +14,18 @@ jobs:
           java-version: 17
       - uses: gradle/actions/setup-gradle@v4
         with:
-          gradle-version: 8.9
-      - run: gradle assembleRelease
+          gradle-version: 8.14.3
+      - name: Build APK + AAB
         working-directory: GreeRemote
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ]; then echo "$KEYSTORE_BASE64" | base64 -d > upload.jks; fi
+          gradle assembleRelease bundleRelease
       - uses: actions/upload-artifact@v4
         with:
-          name: GreeRemote-apk
-          path: GreeRemote/app/build/outputs/apk/release/*.apk
+          name: SplitRemote
+          path: |
+            GreeRemote/app/build/outputs/apk/release/*.apk
+            GreeRemote/app/build/outputs/bundle/release/*.aab
